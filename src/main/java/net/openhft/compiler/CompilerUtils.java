@@ -35,14 +35,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 /**
  * This class support loading and debugging Java Classes dynamically.
  */
-public enum CompilerUtils {
-    ; // none
+public class CompilerUtils {
+
     public static final boolean DEBUGGING = isDebug();
     public static final CachedCompiler CACHED_COMPILER = new CachedCompiler(null, null);
+    public static Supplier<JavaCompiler> compilerSupplier = () -> ToolProvider.getSystemJavaCompiler();
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompilerUtils.class);
     private static final Method DEFINE_CLASS_METHOD;
@@ -79,7 +81,7 @@ public enum CompilerUtils {
     }
 
     private static void reset() {
-        s_compiler = ToolProvider.getSystemJavaCompiler();
+        s_compiler = compilerSupplier.get();
         if (s_compiler == null) {
             try {
                 Class<?> javacTool = Class.forName("com.sun.tools.javac.api.JavacTool");
