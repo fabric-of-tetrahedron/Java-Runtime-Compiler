@@ -102,7 +102,7 @@ public class CompilerUtils {
      * @throws IOException            the resource could not be loaded.
      * @throws ClassNotFoundException the class name didn't match or failed to initialise.
      */
-    public static Class loadFromResource(@NotNull String className, @NotNull String resourceName) throws IOException, ClassNotFoundException {
+    public static Class<?> loadFromResource(@NotNull String className, @NotNull String resourceName) throws IOException, ClassNotFoundException {
         return loadFromJava(className, readText(resourceName));
     }
 
@@ -114,7 +114,7 @@ public class CompilerUtils {
      * @return the outer class loaded.
      * @throws ClassNotFoundException the class name didn't match or failed to initialise.
      */
-    private static Class loadFromJava(@NotNull String className, @NotNull String javaCode) throws ClassNotFoundException {
+    private static Class<?> loadFromJava(@NotNull String className, @NotNull String javaCode) throws ClassNotFoundException {
         return CACHED_COMPILER.loadFromJava(Thread.currentThread().getContextClassLoader(), className, javaCode);
     }
 
@@ -160,7 +160,7 @@ public class CompilerUtils {
      * @param className   expected to load.
      * @param bytes       of the byte code.
      */
-    public static Class defineClass(@Nullable ClassLoader classLoader, @NotNull String className, @NotNull byte[] bytes) {
+    public static Class<?> defineClass(@Nullable ClassLoader classLoader, @NotNull String className, @NotNull byte[] bytes) {
         try {
             return (Class) DEFINE_CLASS_METHOD.invoke(classLoader, className, bytes, 0, bytes.length);
         } catch (IllegalAccessException e) {
