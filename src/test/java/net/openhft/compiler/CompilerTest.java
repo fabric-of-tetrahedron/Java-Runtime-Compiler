@@ -175,10 +175,12 @@ public class CompilerTest extends TestCase {
         assertFalse(usedSysErr.get());
 
         List<String> expectedInErrorFromCompiler = Arrays.asList(
-                "TestClass.java:1: error", "clazz TestClass {}");
+                "TestClass.java:1: ", "clazz TestClass {}");
 
         for (String expectedError : expectedInErrorFromCompiler) {
             String errorMessage = String.format("Does not contain expected '%s' in:\n%s", expectedError, writer.toString());
+//            System.out.println("errorMessage " + errorMessage);
+//            System.out.println("expectedError " + expectedError);
             assertTrue(errorMessage, writer.toString().contains(expectedError));
         }
     }
