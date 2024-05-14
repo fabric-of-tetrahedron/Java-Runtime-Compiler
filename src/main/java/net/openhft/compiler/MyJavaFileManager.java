@@ -72,7 +72,7 @@ public class MyJavaFileManager implements JavaFileManager {
 
     // Apparently, this method might not be thread-safe.
     // See https://github.com/OpenHFT/Java-Runtime-Compiler/issues/85
-    @Override
+//    @Override
     public synchronized Iterable<Set<Location>> listLocationsForModules(final Location location) {
         try {
             return fileManager.listLocationsForModules(location);
@@ -84,7 +84,7 @@ public class MyJavaFileManager implements JavaFileManager {
 
     // Apparently, this method might not be thread-safe.
     // See https://github.com/OpenHFT/Java-Runtime-Compiler/issues/85
-    @Override
+//    @Override
     public synchronized String inferModuleName(final Location location) {
         try {
             return fileManager.inferModuleName(location);
