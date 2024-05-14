@@ -29,10 +29,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.ToolProvider;
 import java.io.*;
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
 import java.nio.charset.Charset;
 import java.util.Arrays;
 import java.util.function.Supplier;
@@ -45,9 +42,11 @@ public class CompilerUtils {
     public static final boolean DEBUGGING = isDebug();
     public static final CachedCompiler CACHED_COMPILER = new CachedCompiler(null, null);
     public static Supplier<JavaCompiler> compilerSupplier = () -> ToolProvider.getSystemJavaCompiler();
+    public static Supplier<ClassLoader> classLoaderSupplier = () -> new MyClassLoader(new CompilerUtils().getClass().getClassLoader());
 
     private static final Logger LOGGER = LoggerFactory.getLogger(CompilerUtils.class);
-    private static final Method DEFINE_CLASS_METHOD;
+    @Nullable
+    private static Method DEFINE_CLASS_METHOD;
     private static final Charset UTF_8 = Charset.forName("UTF-8");
     private static final String JAVA_CLASS_PATH = "java.class.path";
     static JavaCompiler s_compiler;
@@ -64,7 +63,11 @@ public class CompilerUtils {
                 long offset = u.objectFieldOffset(f);
                 u.putBoolean(DEFINE_CLASS_METHOD, offset, true);
             } catch (NoSuchFieldException e) {
-                DEFINE_CLASS_METHOD.setAccessible(true);
+                try {
+                    DEFINE_CLASS_METHOD.setAccessible(true);
+                } catch (InaccessibleObjectException e2) {
+                    DEFINE_CLASS_METHOD = null;
+                }
             }
         } catch (NoSuchMethodException | IllegalAccessException | NoSuchFieldException e) {
             throw new AssertionError(e);
@@ -93,6 +96,10 @@ public class CompilerUtils {
         }
     }
 
+    public static ClassLoader getClassLoader() {
+        return classLoaderSupplier.get();
+    }
+
     /**
      * Load a java class file from the classpath or local file system.
      *
@@ -115,7 +122,7 @@ public class CompilerUtils {
      * @throws ClassNotFoundException the class name didn't match or failed to initialise.
      */
     private static Class<?> loadFromJava(@NotNull String className, @NotNull String javaCode) throws ClassNotFoundException {
-        return CACHED_COMPILER.loadFromJava(Thread.currentThread().getContextClassLoader(), className, javaCode);
+        return CACHED_COMPILER.loadFromJava(DEFINE_CLASS_METHOD != null ? Thread.currentThread().getContextClassLoader() : CompilerUtils.getClassLoader(), className, javaCode);
     }
 
     /**
@@ -150,7 +157,7 @@ public class CompilerUtils {
      * @param bytes     of the byte code.
      */
     public static void defineClass(@NotNull String className, @NotNull byte[] bytes) {
-        defineClass(Thread.currentThread().getContextClassLoader(), className, bytes);
+        defineClass(DEFINE_CLASS_METHOD != null ? Thread.currentThread().getContextClassLoader() : classLoaderSupplier.get(), className, bytes);
     }
 
     /**
@@ -162,7 +169,12 @@ public class CompilerUtils {
      */
     public static Class<?> defineClass(@Nullable ClassLoader classLoader, @NotNull String className, @NotNull byte[] bytes) {
         try {
-            return (Class) DEFINE_CLASS_METHOD.invoke(classLoader, className, bytes, 0, bytes.length);
+            if (DEFINE_CLASS_METHOD != null) {
+                return (Class) DEFINE_CLASS_METHOD.invoke(classLoader, className, bytes, 0, bytes.length);
+            } else {
+                MyClassLoader myClassLoader = (MyClassLoader) classLoader;
+                return myClassLoader.defineClass1(className, bytes, 0, bytes.length);
+            }
         } catch (IllegalAccessException e) {
             throw new AssertionError(e);
         } catch (InvocationTargetException e) {

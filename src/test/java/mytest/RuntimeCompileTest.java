@@ -47,7 +47,8 @@ public class RuntimeCompileTest {
 
     @Test
     public void outOfBounds() throws Exception {
-        ClassLoader cl = new URLClassLoader(new URL[0]);
+        ClassLoader cl = CompilerUtils.getClassLoader();
+//        ClassLoader cl = new URLClassLoader(new URL[0]);
         Class<?> aClass = CompilerUtils.CACHED_COMPILER.
                 loadFromJava(cl, "mytest.Test", code);
         IntConsumer consumer = (IntConsumer) aClass.getDeclaredConstructor().newInstance();
@@ -78,7 +79,7 @@ public class RuntimeCompileTest {
         largeClass.append("}\n");
         final String code2 = largeClass.toString();
 
-        final ClassLoader cl = new URLClassLoader(new URL[0]);
+        final ClassLoader cl = CompilerUtils.getClassLoader();
         final CachedCompiler cc = new CachedCompiler(null, null);
         final int nThreads = Runtime.getRuntime().availableProcessors();
         System.out.println("nThreads = " + nThreads);
