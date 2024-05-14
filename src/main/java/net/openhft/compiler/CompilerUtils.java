@@ -65,7 +65,7 @@ public class CompilerUtils {
             } catch (NoSuchFieldException e) {
                 try {
                     DEFINE_CLASS_METHOD.setAccessible(true);
-                } catch (InaccessibleObjectException e2) {
+                } catch (RuntimeException e2) {
                     DEFINE_CLASS_METHOD = null;
                 }
             }
