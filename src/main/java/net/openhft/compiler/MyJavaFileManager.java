@@ -31,14 +31,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+@Deprecated
 public class MyJavaFileManager implements JavaFileManager {
     private static final Logger LOG = LoggerFactory.getLogger(MyJavaFileManager.class);
     private final static Unsafe unsafe;
@@ -73,14 +72,26 @@ public class MyJavaFileManager implements JavaFileManager {
 
     // Apparently, this method might not be thread-safe.
     // See https://github.com/OpenHFT/Java-Runtime-Compiler/issues/85
+    @Override
     public synchronized Iterable<Set<Location>> listLocationsForModules(final Location location) {
-        return invokeNamedMethodIfAvailable(location, "listLocationsForModules");
+        try {
+            return fileManager.listLocationsForModules(location);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+//        return invokeNamedMethodIfAvailable(location, "listLocationsForModules");
     }
 
     // Apparently, this method might not be thread-safe.
     // See https://github.com/OpenHFT/Java-Runtime-Compiler/issues/85
+    @Override
     public synchronized String inferModuleName(final Location location) {
-        return invokeNamedMethodIfAvailable(location, "inferModuleName");
+        try {
+            return fileManager.inferModuleName(location);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+//        return invokeNamedMethodIfAvailable(location, "inferModuleName");
     }
 
     public ClassLoader getClassLoader(Location location) {
@@ -203,23 +214,23 @@ public class MyJavaFileManager implements JavaFileManager {
         return ret;
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> T invokeNamedMethodIfAvailable(final Location location, final String name) {
-        final Method[] methods = fileManager.getClass().getDeclaredMethods();
-        for (Method method : methods) {
-            if (method.getName().equals(name) && method.getParameterTypes().length == 1 &&
-                    method.getParameterTypes()[0] == Location.class) {
-                try {
-                    if (OVERRIDE_OFFSET == 0)
-                        method.setAccessible(true);
-                    else
-                        unsafe.putBoolean(method, OVERRIDE_OFFSET, true);
-                    return (T) method.invoke(fileManager, location);
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    throw new UnsupportedOperationException("Unable to invoke method " + name, e);
-                }
-            }
-        }
-        throw new UnsupportedOperationException("Unable to find method " + name);
-    }
+//    @SuppressWarnings("unchecked")
+//    private <T> T invokeNamedMethodIfAvailable(final Location location, final String name) {
+//        final Method[] methods = fileManager.getClass().getDeclaredMethods();
+//        for (Method method : methods) {
+//            if (method.getName().equals(name) && method.getParameterTypes().length == 1 &&
+//                    method.getParameterTypes()[0] == Location.class) {
+//                try {
+//                    if (OVERRIDE_OFFSET == 0)
+//                        method.setAccessible(true);
+//                    else
+//                        unsafe.putBoolean(method, OVERRIDE_OFFSET, true);
+//                    return (T) method.invoke(fileManager, location);
+//                } catch (IllegalAccessException | InvocationTargetException | InaccessibleObjectException e) {
+//                    throw new UnsupportedOperationException("Unable to invoke method " + name, e);
+//                }
+//            }
+//        }
+//        throw new UnsupportedOperationException("Unable to find method " + name);
+//    }
 }
